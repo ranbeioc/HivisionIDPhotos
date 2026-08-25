@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "status": "pass",
+  "environment": {
+    "architecture": "aarch64",
+    "platform": "Linux-6.17.0-1014-oracle-aarch64-with-glibc2.36",
+    "python": "3.11.13",
+    "ompNumThreads": "1",
+    "openblasNumThreads": "1",
+    "opencvNumThreads": "1",
+    "vpsCpu": "4x Neoverse-N1",
+    "vpsMemoryGiB": 23,
+    "vpsSwapGiB": 0,
+    "containerCpuLimit": 2,
+    "containerMemoryGiB": 6,
+    "containerPidsLimit": 256,
+    "containerNetwork": "none",
+    "containerRootFilesystem": "read-only"
+  },
+  "image": {
+    "tag": "xhalo/hivision-compute:phase1-preview-local",
+    "digest": "sha256:b91fc74d652ebba9dcf3da1390af6aad2ed500524ac46c2ed6cfdad963614e0e",
+    "bytes": 513921953,
+    "architecture": "arm64"
+  },
+  "input": {
+    "sha256": "b75cf154d2e5719344d2157d95b7523fc90e8482d6b8f0c081a4406b3ad2bb51",
+    "mime": "image/png",
+    "purpose": "User-supplied visual-reference preflight only; not a licensed Golden fixture"
+  },
+  "reportSha256": "396fb76ffea8671c326afd6622be55fedfb193f6372701c66bb12fec0d3bcedc",
+  "combinations": [
+    {
+      "mattingModel": "modnet_photographic_portrait_matting",
+      "faceModel": "mtcnn",
+      "iterations": 10,
+      "cold": { "wallMs": 975.48, "cpuMs": 1929.09 },
+      "warm": {
+        "p50WallMs": 888.09,
+        "p95WallMs": 908.02,
+        "meanWallMs": 879.24,
+        "p50CpuMs": 1750.29,
+        "p95CpuMs": 1833.59
+      },
+      "peakRssMiB": 381.54,
+      "peakRssDeltaMiB": 226.04,
+      "status": "pass"
+    },
+    {
+      "mattingModel": "modnet_photographic_portrait_matting",
+      "faceModel": "retinaface-resnet50",
+      "iterations": 10,
+      "cold": { "wallMs": 6925.4, "cpuMs": 13584.53 },
+      "warm": {
+        "p50WallMs": 6635.72,
+        "p95WallMs": 6730.27,
+        "meanWallMs": 6649.26,
+        "p50CpuMs": 13195.14,
+        "p95CpuMs": 13353.97
+      },
+      "peakRssMiB": 1235.04,
+      "peakRssDeltaMiB": 1079.48,
+      "status": "pass"
+    }
+  ],
+  "coTenantHealth": {
+    "unhealthyContainersAfterRun": 0,
+    "healthyContainersAfterRun": 9,
+    "availableMemoryGiBAfterRun": 19,
+    "benchmarkContainerRemaining": false
+  },
+  "releaseDecision": "preflight-pass-not-a-release-gate"
+}

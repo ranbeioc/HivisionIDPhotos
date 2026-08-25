@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import os
-import gradio as gr
 
 
 class LutWhite:
@@ -78,6 +77,8 @@ def make_whitening_png(image, strength):
 
 # 启动Gradio应用
 if __name__ == "__main__":
+    import gradio as gr
+
     demo = gr.Interface(
         fn=make_whitening,
         inputs=[

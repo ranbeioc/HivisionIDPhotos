@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-08-25",
+  "models": [
+    {
+      "id": "modnet_photographic_portrait_matting",
+      "productionAllowed": true,
+      "decision": "approved",
+      "artifact": {
+        "url": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/modnet_photographic_portrait_matting.onnx",
+        "bytes": 25888640,
+        "sha256": "07c308cf0fc7e6e8b2065a12ed7fc07e1de8febb7dc7839d7b7f15dd66584df9",
+        "releaseRepository": "Zeyi-Lin/HivisionIDPhotos",
+        "releaseAssetId": 191044689,
+        "uploader": "Zeyi-Lin",
+        "createdAt": "2024-09-07T09:43:41Z"
+      },
+      "implementation": {
+        "repository": "https://github.com/ZHKKKe/MODNet",
+        "licenseSpdx": "Apache-2.0",
+        "licenseUrl": "https://github.com/ZHKKKe/MODNet/blob/master/LICENSE"
+      },
+      "weightProvenance": {
+        "status": "approved",
+        "reviewedScope": "The upstream project explicitly licenses its code, models and demos under Apache-2.0; the redistributed Hivision release artifact is byte- and checksum-pinned."
+      },
+      "evidence": [
+        "https://github.com/ZHKKKe/MODNet",
+        "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/tag/pretrained-model"
+      ],
+      "missingEvidence": []
+    },
+    {
+      "id": "retinaface-resnet50",
+      "productionAllowed": false,
+      "decision": "needs-verification",
+      "artifact": {
+        "url": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/retinaface-resnet50.onnx",
+        "bytes": 109458296,
+        "sha256": "40f825cf7dd0a88b26fb61db9a3aaedc2cad35162091113f4017b3c26a4f792d",
+        "releaseRepository": "Zeyi-Lin/HivisionIDPhotos",
+        "releaseAssetId": 191588278,
+        "uploader": "Zeyi-Lin",
+        "createdAt": "2024-09-09T23:49:06Z"
+      },
+      "implementation": {
+        "repository": "https://github.com/biubug6/Pytorch_Retinaface",
+        "licenseSpdx": "MIT",
+        "licenseUrl": "https://github.com/biubug6/Pytorch_Retinaface/blob/master/LICENSE.MIT",
+        "hivisionPullRequest": "https://github.com/Zeyi-Lin/HivisionIDPhotos/pull/90",
+        "hivisionMergeCommit": "f38c47f2a31f55b2f6970c0e487efc63c38b388e"
+      },
+      "weightProvenance": {
+        "status": "needs-verification",
+        "onnxProducer": "pytorch",
+        "onnxGraph": "torch-jit-export",
+        "onnxInput": "input",
+        "onnxOutputs": ["bbox", "confidence", "landmark"]
+      },
+      "evidence": [
+        "https://github.com/Zeyi-Lin/HivisionIDPhotos/pull/90",
+        "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/tag/pretrained-model",
+        "https://github.com/biubug6/Pytorch_Retinaface/blob/master/LICENSE.MIT"
+      ],
+      "missingEvidence": [
+        "Exact source checkpoint and its immutable checksum",
+        "Conversion command, exporter version and source commit",
+        "Training-data and binary-weight redistribution statement",
+        "Explicit mapping from the uploaded ONNX asset to the MIT implementation"
+      ]
+    }
+  ]
+}

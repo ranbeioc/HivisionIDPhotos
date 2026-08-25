@@ -1,0 +1,4 @@
+# Legacy Gradio remains a separate, loopback-only regression runtime. It is not
+# installed in the Production or Preview compute image.
+gradio==6.24.0
+huggingface-hub==1.28.0

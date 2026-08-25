@@ -1,0 +1,41 @@
+services:
+  hivision-preview:
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: legacy
+      platforms:
+        - linux/arm64
+      args:
+        MODEL_SET: preview-default
+    image: ${HIVISION_IMAGE_REF:-xhalo/hivision-legacy:phase1-local}
+    restart: unless-stopped
+    env_file:
+      - ${HIVISION_ENV_FILE:-.env.preview}
+    environment:
+      ENABLE_LEGACY_GRADIO: "true"
+      GRADIO_ANALYTICS_ENABLED: "false"
+      GRADIO_TEMP_DIR: "/tmp/gradio"
+      HF_HOME: "/tmp/huggingface"
+      XDG_CACHE_HOME: "/tmp/cache"
+      HIVISION_HOST: "0.0.0.0"
+      HIVISION_PORT: "8090"
+    ports:
+      - "127.0.0.1:18090:8090"
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 6g
+    cpus: 2.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8090),2); s.close()"]
+      interval: 20s
+      timeout: 3s
+      retries: 5
+      start_period: 90s

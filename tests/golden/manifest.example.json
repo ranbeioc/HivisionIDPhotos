@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "baselineLane": "gradio",
+  "cases": [
+    {
+      "id": "replace-with-approved-front-default",
+      "fixtureRef": "private://licensed-fixtures/front-default.jpg",
+      "configRef": "private://licensed-fixtures/config/default.json",
+      "variants": {
+        "standard": {
+          "path": "replace-with-approved-front-default/standard.jpg",
+          "mime": "image/jpeg",
+          "width": 295,
+          "height": 413,
+          "dpi": 300,
+          "deterministic": true,
+          "sha256": "replace-with-64-character-sha256",
+          "thresholds": {
+            "ssim": 0.995,
+            "alphaMaskIou": 0.995,
+            "maxGeometryDeviationPx": 1
+          }
+        }
+      }
+    }
+  ]
+}

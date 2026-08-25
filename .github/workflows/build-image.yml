@@ -1,28 +1,141 @@
-name: build image and push
+name: verify and build immutable ARM64 image
 
 on:
+  pull_request:
   push:
+    branches:
+      - master
     tags:
-      - '*'
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hivision-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
-  docker:
+  verify:
     runs-on: ubuntu-latest
-    environment: release
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-app.txt
+            requirements-legacy.txt
+            requirements-test.txt
 
-      - name: Install dependencies
-        run: pip install requests tqdm
+      - name: Install pinned dependencies
+        run: python -m pip install --requirement requirements.txt --requirement requirements-app.txt --requirement requirements-legacy.txt --requirement requirements-test.txt
 
-      - name: Download models
-        run: python scripts/download_model.py --models all
+      - name: Compile release boundaries
+        run: python -m compileall -q api services scripts/benchmark_models.py scripts/probe_memory_pressure.py scripts/run_golden_matrix.py scripts/smoke_legacy_route.py scripts/verify_model_provenance.py deploy_api.py
+
+      - name: Validate loopback-only Preview Compose
+        env:
+          HIVISION_ENV_FILE: .env.preview.example
+        run: docker compose -f compose.preview.yaml config --quiet
+
+      - name: Run contract and fail-closed release-gate tests
+        run: python -m pytest -q -p no:cacheprovider tests/test_contracts.py tests/test_release_gates.py
+
+      - name: Audit Production Python dependencies
+        run: python -m pip_audit --requirement requirements.txt --requirement requirements-app.txt
+
+      - name: Audit Legacy regression dependencies
+        run: python -m pip_audit --requirement requirements.txt --requirement requirements-app.txt --requirement requirements-legacy.txt
+
+      - name: Verify Production model set
+        run: |
+          python scripts/verify_model_provenance.py --set preview-default
+          python scripts/verify_model_provenance.py --set production-default
+          python scripts/download_verified_models.py --set production-default
+          python scripts/download_verified_models.py --set production-default --verify-only
+          test ! -f hivision/creator/retinaface/weights/retinaface-resnet50.onnx
+
+      - name: Render the loopback-only Legacy Gradio route
+        env:
+          ENABLE_LEGACY_GRADIO: "true"
+        run: python scripts/smoke_legacy_route.py
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Production candidate without publishing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          platforms: linux/arm64
+          push: false
+          load: true
+          build-args: MODEL_SET=production-default
+          tags: xhalo/hivision-compute:ci-production
+          cache-from: type=gha,scope=hivision-arm64-production
+          cache-to: type=gha,mode=max,scope=hivision-arm64-production
+
+      - name: Verify the ARM64 Production runtime boundary
+        run: |
+          docker run --rm --platform linux/arm64 --entrypoint python xhalo/hivision-compute:ci-production -c "import importlib.util; assert importlib.util.find_spec('gradio') is None"
+          docker run --rm --platform linux/arm64 --entrypoint python xhalo/hivision-compute:ci-production -c "from services.model_registry import get_model_registry; registry = get_model_registry(); assert registry.available_matting_models() == ['modnet_photographic_portrait_matting']; assert registry.available_face_models() == ['mtcnn']"
+
+      - name: Reject compute under no-swap memory pressure
+        run: |
+          docker run --rm --platform linux/arm64 \
+            --network none --memory 1g --memory-swap 1g --pids-limit 256 \
+            --read-only --tmpfs /tmp:size=64m,mode=1777 \
+            --security-opt no-new-privileges:true --cap-drop ALL \
+            --entrypoint python xhalo/hivision-compute:ci-production \
+            scripts/probe_memory_pressure.py
+
+      - name: Build Legacy regression candidate without publishing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: legacy
+          platforms: linux/arm64
+          push: false
+          load: true
+          build-args: MODEL_SET=preview-default
+          tags: xhalo/hivision-legacy:ci
+          cache-from: type=gha,scope=hivision-arm64-legacy
+          cache-to: type=gha,mode=max,scope=hivision-arm64-legacy
+
+      - name: Verify the ARM64 Legacy regression route
+        run: docker run --rm --platform linux/arm64 --entrypoint python xhalo/hivision-legacy:ci scripts/smoke_legacy_route.py
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -36,12 +149,15 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Publish immutable Production tag
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          target: production
+          platforms: linux/arm64
           push: true
-          tags: |
-            ${{ vars.IMAGE_NAME }}:latest
-            ${{ vars.IMAGE_NAME }}:${{ github.ref_name }}
+          build-args: MODEL_SET=production-default
+          tags: ${{ vars.IMAGE_NAME }}:${{ github.ref_name }}
+          cache-from: type=gha,scope=hivision-arm64-production
+          cache-to: type=gha,mode=max,scope=hivision-arm64-production
+          provenance: mode=max

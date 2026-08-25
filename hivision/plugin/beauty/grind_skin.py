@@ -1,7 +1,6 @@
 # Required Libraries
 import cv2
 import numpy as np
-import gradio as gr
 
 
 def annotate_image(image, grind_degree, detail_degree, strength):
@@ -84,33 +83,20 @@ def process_image(input_img, grind_degree, detail_degree, strength):
     return combined_img_rgb
 
 
-with gr.Blocks(title="Skin Grinding") as iface:
-    gr.Markdown("## Skin Grinding Application")
-
-    with gr.Row():
-        image_input = gr.Image(type="numpy", label="Input Image")
-        image_output = gr.Image(label="Output Image")
-
-    grind_degree_slider = gr.Slider(
-        minimum=1, maximum=10, value=3, step=1, label="Grind Degree"
-    )
-    detail_degree_slider = gr.Slider(
-        minimum=1, maximum=10, value=1, step=1, label="Detail Degree"
-    )
-    strength_slider = gr.Slider(
-        minimum=0, maximum=10, value=9, step=1, label="Strength"
-    )
-
-    gr.Button("Process Image").click(
-        fn=process_image,
-        inputs=[
-            image_input,
-            grind_degree_slider,
-            detail_degree_slider,
-            strength_slider,
-        ],
-        outputs=image_output,
-    )
-
 if __name__ == "__main__":
+    import gradio as gr
+
+    with gr.Blocks(title="Skin Grinding") as iface:
+        gr.Markdown("## Skin Grinding Application")
+        with gr.Row():
+            image_input = gr.Image(type="numpy", label="Input Image")
+            image_output = gr.Image(label="Output Image")
+        grind_degree_slider = gr.Slider(minimum=1, maximum=10, value=3, step=1, label="Grind Degree")
+        detail_degree_slider = gr.Slider(minimum=1, maximum=10, value=1, step=1, label="Detail Degree")
+        strength_slider = gr.Slider(minimum=0, maximum=10, value=9, step=1, label="Strength")
+        gr.Button("Process Image").click(
+            fn=process_image,
+            inputs=[image_input, grind_degree_slider, detail_degree_slider, strength_slider],
+            outputs=image_output,
+        )
     iface.launch()
