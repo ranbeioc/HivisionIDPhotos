@@ -5,6 +5,7 @@
 .history
 .DS_Store
 .env
+.env.preview
 demo/kb_output/*.jpg
 demo/kb_output/*.png
 scripts/sync_swanhub.py

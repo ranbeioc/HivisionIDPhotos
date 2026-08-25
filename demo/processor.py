@@ -25,6 +25,9 @@ from demo.locales import LOCALES
 base_path = os.path.dirname(os.path.abspath(__file__))
 
 class IDPhotoProcessor:
+    def __init__(self, model_registry=None):
+        self.model_registry = model_registry
+
     def process(
         self,
         input_image,
@@ -131,12 +134,15 @@ class IDPhotoProcessor:
         if image_dpi_option == LOCALES["image_dpi"][language]["choices"][-1]:
             idphoto_json["custom_image_dpi"] = custom_image_dpi
 
-        # 创建IDCreator实例并设置处理器
-        creator = IDCreator()
-        choose_handler(creator, matting_model_option, face_detect_option)
-
-        # 生成证件照
+        # Preview API 与内部 Gradio 共用 ModelRegistry，避免第二套权重。
+        creator_context = None
         try:
+            if self.model_registry:
+                creator_context = self.model_registry.acquire(matting_model_option, face_detect_option)
+                creator = creator_context.__enter__()
+            else:
+                creator = IDCreator()
+                choose_handler(creator, matting_model_option, face_detect_option)
             result = self._generate_id_photo(
                 creator,
                 input_image,
@@ -155,6 +161,9 @@ class IDPhotoProcessor:
             )
         except (FaceError, APIError):
             return self._handle_photo_generation_error(language)
+        finally:
+            if creator_context:
+                creator_context.__exit__(None, None, None)
 
         # 后处理生成的照片
         return self._process_generated_photo(

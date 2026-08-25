@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "modnet_photographic_portrait_matting",
+      "url": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/modnet_photographic_portrait_matting.onnx",
+      "path": "hivision/creator/weights/modnet_photographic_portrait_matting.onnx",
+      "bytes": 25888640,
+      "sha256": "07c308cf0fc7e6e8b2065a12ed7fc07e1de8febb7dc7839d7b7f15dd66584df9",
+      "license": "Apache-2.0 (ZHKKKe/MODNet code, models and demos; verified 2026-08-24)",
+      "sets": ["preview-default", "production-default"]
+    },
+    {
+      "id": "retinaface-resnet50",
+      "url": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/retinaface-resnet50.onnx",
+      "path": "hivision/creator/retinaface/weights/retinaface-resnet50.onnx",
+      "bytes": 109458296,
+      "sha256": "40f825cf7dd0a88b26fb61db9a3aaedc2cad35162091113f4017b3c26a4f792d",
+      "license": "MIT implementation; exact ONNX weight provenance still needs-verification before production",
+      "sets": ["preview-default"]
+    }
+  ]
+}

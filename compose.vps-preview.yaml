@@ -1,0 +1,55 @@
+services:
+  hivision-preview:
+    image: ${HIVISION_IMAGE_REF:?HIVISION_IMAGE_REF is required}
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - .env.preview
+    environment:
+      ENABLE_LEGACY_GRADIO: "true"
+      GRADIO_ANALYTICS_ENABLED: "false"
+      GRADIO_TEMP_DIR: /tmp/gradio
+      HF_HOME: /tmp/huggingface
+      XDG_CACHE_HOME: /tmp/cache
+      HIVISION_HOST: 0.0.0.0
+      HIVISION_PORT: "8090"
+      HIVISION_MAX_INFLIGHT_REQUESTS: "4"
+    ports:
+      - 127.0.0.1:18090:8090
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 6g
+    cpus: 2.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8090),2); s.close()"]
+      interval: 20s
+      timeout: 3s
+      retries: 5
+      start_period: 90s
+
+  tunnel-preview:
+    image: ${CLOUDFLARED_IMAGE_REF:?CLOUDFLARED_IMAGE_REF is required}
+    platform: linux/arm64
+    restart: unless-stopped
+    network_mode: host
+    user: "0:0"
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token-file
+      - /run/secrets/tunnel-token
+    volumes:
+      - ./secrets/tunnel-token:/run/secrets/tunnel-token:ro
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128

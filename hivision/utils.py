@@ -228,9 +228,7 @@ def hex_to_rgb(value):
     )
 
 
-def generate_gradient(start_color, width, height, mode="updown"):
-    # 定义背景颜色
-    end_color = (255, 255, 255)  # 白色
+def generate_gradient(start_color, width, height, mode="updown", end_color=(255, 255, 255)):
 
     # 创建一个空白图像
     r_out = np.zeros((height, width), dtype=int)
@@ -259,8 +257,6 @@ def generate_gradient(start_color, width, height, mode="updown"):
         # 定义椭圆中心和半径
         center = (width // 2, height // 2)
         end_axies = max(height, width)
-        # 定义渐变色
-        end_color = (255, 255, 255)
         # 绘制椭圆
         for y in range(end_axies):
             axes = (end_axies - y, end_axies - y)
@@ -283,7 +279,7 @@ def generate_gradient(start_color, width, height, mode="updown"):
     return r_out, g_out, b_out
 
 
-def add_background(input_image, bgr=(0, 0, 0), mode="pure_color"):
+def add_background(input_image, bgr=(0, 0, 0), mode="pure_color", end_bgr=(255, 255, 255)):
     """
     本函数的功能为为透明图像加上背景。
     :param input_image: numpy.array(4 channels), 透明图像
@@ -306,9 +302,9 @@ def add_background(input_image, bgr=(0, 0, 0), mode="pure_color"):
         g2 = np.full([height, width], bgr[1], dtype=int)
         r2 = np.full([height, width], bgr[2], dtype=int)
     elif mode == "updown_gradient":
-        b2, g2, r2 = generate_gradient(bgr, width, height, mode="updown")
+        b2, g2, r2 = generate_gradient(bgr, width, height, mode="updown", end_color=end_bgr)
     else:
-        b2, g2, r2 = generate_gradient(bgr, width, height, mode="center")
+        b2, g2, r2 = generate_gradient(bgr, width, height, mode="center", end_color=end_bgr)
 
     output = cv2.merge(
         ((b - b2) * a_cal + b2, (g - g2) * a_cal + g2, (r - r2) * a_cal + r2)
