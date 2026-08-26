@@ -10,12 +10,14 @@ from hivision.error import APIError, FaceError
 from services.contracts import IdPhotoOptions
 from services.capacity import CapacityUnavailable, RequestAdmission
 from services.id_photo import IdPhotoService, ProcessContext
+from services.background_remove import BackgroundRemoveContext, BackgroundRemoveService
 from services.image_validator import InvalidImage, validate_and_decode
 from .security import verify_gateway_request
 
 
 app = FastAPI(title="XHalo Hivision Compute", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
 service = IdPhotoService()
+background_remove_service = BackgroundRemoveService(service.registry)
 request_admission = RequestAdmission()
 
 
@@ -109,6 +111,30 @@ async def process(
         raise HTTPException(status_code=422, detail="Invalid config") from error
     result = await service.process(decoded, original_bytes, original_mime, options, ProcessContext(request_id=x_request_id, broker_url=x_xhalo_asset_broker_url, broker_grant=x_xhalo_asset_grant, broker_hmac_secret=os.environ["HIVISION_HMAC_SECRET"], input_asset_id=x_xhalo_input_asset_id, input_asset_saved=x_xhalo_input_asset_saved))
     return result.model_dump(by_alias=True, exclude_none=True)
+
+
+@app.post("/v1/images/background-remove", dependencies=[Depends(admit_process_request)])
+async def background_remove(
+    request: Request,
+    x_xhalo_asset_broker_url: str = Header(alias="x-xhalo-asset-broker-url"),
+    x_xhalo_asset_grant: str = Header(alias="x-xhalo-asset-grant"),
+    x_request_id: str = Header(alias="x-request-id"),
+):
+    await verify_gateway_request(request)
+    form = await request.form()
+    image_file = form.get("image")
+    pipeline_value = form.get("pipeline")
+    if not isinstance(image_file, UploadFile) or not isinstance(pipeline_value, str):
+        raise HTTPException(status_code=400, detail={"code": "INVALID_CONFIG", "message": "image and pipeline are required"})
+    try:
+        pipeline = json.loads(pipeline_value)
+        operation = next(value for value in pipeline.get("operations", []) if value.get("id") == "background-remove")
+        model = str(operation.get("model", "modnet_photographic_portrait_matting"))
+    except (ValueError, TypeError, json.JSONDecodeError, StopIteration) as error:
+        raise HTTPException(status_code=422, detail={"code": "INVALID_CONFIG", "message": "A valid background-remove operation is required"}) from error
+    original = await image_file.read()
+    decoded = validate_and_decode(original, image_file.content_type or "")
+    return await background_remove_service.process(decoded, len(original), model, BackgroundRemoveContext(request_id=x_request_id, broker_url=x_xhalo_asset_broker_url, broker_grant=x_xhalo_asset_grant, broker_hmac_secret=os.environ["HIVISION_HMAC_SECRET"]))
 
 
 if os.environ.get("ENABLE_LEGACY_GRADIO") == "true":

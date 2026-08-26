@@ -24,7 +24,7 @@ class AssetBrokerClient:
         signature = base64.urlsafe_b64encode(hmac.new(self.hmac_secret, canonical, hashlib.sha256).digest()).decode("ascii").rstrip("=")
         return {"content-type": "application/json", "x-request-id": self.request_id, "x-xhalo-timestamp": timestamp, "x-xhalo-signature": signature}
 
-    async def upload(self, variant: str, mime: str, image_bytes: bytes, width: int, height: int, dpi: int | None, config: dict, parent_asset_id: str | None = None) -> AssetDescriptor:
+    async def upload(self, variant: str, mime: str, image_bytes: bytes, width: int, height: int, dpi: int | None, config: dict, parent_asset_id: str | None = None, operation: str | None = None) -> AssetDescriptor:
         checksum = hashlib.sha256(image_bytes).hexdigest()
         body = json.dumps({"grant": self.grant, "variant": variant, "mime": mime, "bytes": len(image_bytes), "checksumSha256": checksum}, separators=(",", ":")).encode()
         create_path = "/internal/v1/asset-uploads"
@@ -37,7 +37,7 @@ class AssetBrokerClient:
             finalize_url = f"{self.base_url}/{session['uploadSessionId']}/finalize"
             finalize_path = f"/internal/v1/asset-uploads/{session['uploadSessionId']}/finalize"
             extension = {"image/png": "png", "image/webp": "webp"}.get(mime, "jpg")
-            finalize_body = json.dumps({"grant": self.grant, "width": width, "height": height, "dpi": dpi, "filename": f"{variant}.{extension}", "parentAssetId": parent_asset_id, "operation": "id-photo" if parent_asset_id else None, "operationVersion": "v1" if parent_asset_id else None, "config": config}, separators=(",", ":")).encode()
+            finalize_body = json.dumps({"grant": self.grant, "width": width, "height": height, "dpi": dpi, "filename": f"{variant}.{extension}", "parentAssetId": parent_asset_id, "operation": operation or ("id-photo" if parent_asset_id else None), "operationVersion": "v1" if operation or parent_asset_id else None, "config": config}, separators=(",", ":")).encode()
             finalized = await client.post(finalize_url, content=finalize_body, headers=self._headers("POST", finalize_path, finalize_body))
             finalized.raise_for_status()
             payload = finalized.json()

@@ -1,0 +1,20 @@
+FROM python@sha256:18ce9b03d18802119f4f9270d10a1ceb45d0acb768c305b7fbbd7c6b5b5a020b
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    OPENCV_FOR_THREADS_NUM=1
+
+WORKDIR /app
+COPY requirements-tools.txt ./
+RUN pip install --no-cache-dir --requirement requirements-tools.txt
+COPY api ./api
+COPY services ./services
+COPY deploy_tools_api.py ./
+RUN python -m compileall api services deploy_tools_api.py \
+    && useradd --create-home --uid 10002 tools \
+    && chown -R tools:tools /app
+USER 10002:10002
+EXPOSE 8091
+CMD ["python", "-u", "deploy_tools_api.py"]

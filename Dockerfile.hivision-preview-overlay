@@ -1,0 +1,9 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+USER root
+COPY api/main.py api/security.py ./api/
+COPY services/asset_broker.py services/background_remove.py ./services/
+RUN python -m compileall api/main.py api/security.py services/asset_broker.py services/background_remove.py \
+    && chown -R 10001:10001 /app/api /app/services
+USER 10001:10001
