@@ -53,7 +53,7 @@ services:
     cap_drop:
       - ALL
     pids_limit: 256
-    mem_limit: 6g
+    mem_limit: 8g
     cpus: 2.0
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8090),2); s.close()"]

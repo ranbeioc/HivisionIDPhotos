@@ -52,6 +52,12 @@ The container is read-only, drops all Linux capabilities, enables
 `no-new-privileges`, limits CPU/RAM/PIDs and places Gradio/Hugging Face caches
 under the bounded `/tmp` tmpfs.
 
+Preview reserves an 8 GiB cgroup ceiling for the optional BiRefNet v1 Lite
+model. Its model-specific admission gate requires at least 7168 MiB available
+before inference; lower headroom returns `MODEL_UNAVAILABLE` without loading the
+ONNX graph. This does not change the single-compute semaphore or authorize the
+Preview-only weight for Production.
+
 ## Release checks
 
 Before using an image digest in Preview or Production:

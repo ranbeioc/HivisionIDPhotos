@@ -9,6 +9,12 @@ from hivision import IDCreator
 from hivision.creator.choose_handler import HUMAN_MATTING_MODELS, choose_handler
 from .capacity import CapacityUnavailable, ComputeBusy, available_memory_mib, configured_min_available_mib, require_memory_headroom
 
+MATTING_MODEL_MIN_AVAILABLE_MIB = {
+    # The 2026-08-28 ARM64 Preview gate peaked at 6682 MiB. Keep a bounded
+    # safety margin and fail before ONNX allocation rather than risking OOM.
+    "birefnet-v1-lite": 7168,
+}
+
 
 class ModelRegistry:
     """Shares configured creators and serializes request-scoped compute."""
@@ -45,10 +51,12 @@ class ModelRegistry:
         except CapacityUnavailable:
             return False
 
-    def ensure_ready(self) -> None:
+    def ensure_ready(self, matting_model: str | None = None) -> None:
         if not self.available_matting_models():
             raise CapacityUnavailable("No matting model is installed")
         minimum = self._minimum_available_mib if self._minimum_available_mib is not None else configured_min_available_mib()
+        if matting_model is not None:
+            minimum = max(minimum, MATTING_MODEL_MIN_AVAILABLE_MIB.get(matting_model, 0))
         require_memory_headroom(self._memory_probe(), minimum)
 
     @contextmanager
@@ -60,7 +68,7 @@ class ModelRegistry:
         if not self._compute.acquire(blocking=False):
             raise ComputeBusy("Compute concurrency is currently full")
         try:
-            self.ensure_ready()
+            self.ensure_ready(matting_model)
             key = (matting_model, face_model)
             with self._lock:
                 creator = self._creators.get(key)

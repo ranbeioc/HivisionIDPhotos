@@ -22,6 +22,17 @@ def test_memory_pressure_fails_closed_before_model_loading():
         require_memory_headroom(1024, 2048)
 
 
+def test_birefnet_requires_benchmarked_memory_headroom(tmp_path: Path):
+    weights = tmp_path / "hivision" / "creator" / "weights"
+    weights.mkdir(parents=True)
+    (weights / "birefnet-v1-lite.onnx").write_bytes(b"fixture")
+    registry = ModelRegistry(root=tmp_path, memory_probe=lambda: 7000, minimum_available_mib=2048)
+
+    with pytest.raises(MemoryPressure, match="headroom is too low"):
+        with registry.acquire("birefnet-v1-lite", "mtcnn"):
+            pass
+
+
 def test_registry_rejects_parallel_compute_without_waiting(tmp_path: Path, monkeypatch):
     weights = tmp_path / "hivision" / "creator" / "weights"
     weights.mkdir(parents=True)
