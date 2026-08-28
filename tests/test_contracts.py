@@ -50,6 +50,28 @@ def test_config_exposes_complete_legacy_size_and_color_catalog():
     assert {"#628bce", "#d74532", "#4b6190", "#f2f0f0"}.issubset(colors)
 
 
+def test_config_exposes_every_legacy_matting_model_with_runtime_availability(tmp_path):
+    pytest.importorskip("cv2")
+    from services.id_photo import IdPhotoService
+    from services.model_registry import ModelRegistry
+
+    weights = tmp_path / "hivision" / "creator" / "weights"
+    weights.mkdir(parents=True)
+    (weights / "modnet_photographic_portrait_matting.onnx").write_bytes(b"fixture")
+    registry = ModelRegistry(root=tmp_path, memory_probe=lambda: 4096, minimum_available_mib=2048)
+
+    models = IdPhotoService(registry).config()["mattingModels"]
+    assert [model["id"] for model in models] == [
+        "modnet_photographic_portrait_matting",
+        "birefnet-v1-lite",
+        "hivision_modnet",
+        "rmbg-1.4",
+    ]
+    assert [model["id"] for model in models if model["available"]] == ["modnet_photographic_portrait_matting"]
+    assert {model["id"] for model in models if model["heavy"]} == {"birefnet-v1-lite", "rmbg-1.4"}
+    assert all(model["label"]["zh"] != model["id"] for model in models)
+
+
 def test_service_preserves_rgb_background_channel_order():
     pytest.importorskip("cv2")
     import numpy as np

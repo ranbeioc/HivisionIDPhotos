@@ -81,7 +81,13 @@ def test_production_model_set_excludes_unreviewed_retinaface():
     production = {model["id"] for model in manifest["models"] if "production-default" in model["sets"]}
     preview = {model["id"] for model in manifest["models"] if "preview-default" in model["sets"]}
     assert production == {"modnet_photographic_portrait_matting"}
-    assert "retinaface-resnet50" in preview
+    assert preview == {
+        "modnet_photographic_portrait_matting",
+        "hivision_modnet",
+        "rmbg-1.4",
+        "birefnet-v1-lite",
+        "retinaface-resnet50",
+    }
     assert "retinaface-resnet50" not in production
 
 
@@ -91,7 +97,13 @@ def test_model_provenance_allows_reviewed_production_and_preview_only_retinaface
     production = validate_model_set(manifest, provenance, "production-default")
     preview = validate_model_set(manifest, provenance, "preview-default")
     assert production == [{"id": "modnet_photographic_portrait_matting", "decision": "approved", "productionAllowed": True}]
-    assert {item["id"] for item in preview} == {"modnet_photographic_portrait_matting", "retinaface-resnet50"}
+    assert {item["id"] for item in preview} == {
+        "modnet_photographic_portrait_matting",
+        "hivision_modnet",
+        "rmbg-1.4",
+        "birefnet-v1-lite",
+        "retinaface-resnet50",
+    }
 
 
 def test_model_provenance_refuses_unreviewed_weight_in_production():

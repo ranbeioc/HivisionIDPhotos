@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 from PIL import Image
 
+from hivision.creator.choose_handler import HUMAN_MATTING_MODELS
 from hivision.creator.layout_calculator import generate_layout_array, generate_layout_image
 from hivision.error import APIError, FaceError
 from hivision.plugin.template.template_calculator import generte_template_photo
@@ -39,7 +40,58 @@ SIZE_PRESETS = {
     "korea-visa": (531, 413),
 }
 PAPER_PIXELS = {"6-inch": (1205, 1795), "5-inch": (1051, 1500), "A4": (2479, 3508), "3R": (1051, 1500), "4R": (1205, 1795)}
-CONFIG_VERSION = "hivision-5c191e2-contract-v4"
+CONFIG_VERSION = "hivision-21e59f6-contract-v5-matting-catalog"
+
+MATTING_MODEL_LABELS = {
+    "modnet_photographic_portrait_matting": {
+        "zh": "MODNet 人像抠图",
+        "zh-Hant": "MODNet 人像去背",
+        "en": "MODNet portrait matting",
+        "ja": "MODNet 人物切り抜き",
+        "ko": "MODNet 인물 누끼",
+        "de": "MODNet-Portraitfreistellung",
+        "fr": "Détourage portrait MODNet",
+        "es": "Recorte de retrato MODNet",
+        "it": "Scontorno ritratto MODNet",
+        "pt": "Recorte de retrato MODNet",
+    },
+    "birefnet-v1-lite": {
+        "zh": "BiRefNet v1 Lite（高精度）",
+        "zh-Hant": "BiRefNet v1 Lite（高精度）",
+        "en": "BiRefNet v1 Lite (high precision)",
+        "ja": "BiRefNet v1 Lite（高精度）",
+        "ko": "BiRefNet v1 Lite (고정밀)",
+        "de": "BiRefNet v1 Lite (hohe Präzision)",
+        "fr": "BiRefNet v1 Lite (haute précision)",
+        "es": "BiRefNet v1 Lite (alta precisión)",
+        "it": "BiRefNet v1 Lite (alta precisione)",
+        "pt": "BiRefNet v1 Lite (alta precisão)",
+    },
+    "hivision_modnet": {
+        "zh": "Hivision MODNet（纯色换底优化）",
+        "zh-Hant": "Hivision MODNet（純色換底最佳化）",
+        "en": "Hivision MODNet (solid-background optimized)",
+        "ja": "Hivision MODNet（単色背景向け）",
+        "ko": "Hivision MODNet (단색 배경 최적화)",
+        "de": "Hivision MODNet (für Volltonhintergründe)",
+        "fr": "Hivision MODNet (fonds unis)",
+        "es": "Hivision MODNet (fondos lisos)",
+        "it": "Hivision MODNet (sfondi uniformi)",
+        "pt": "Hivision MODNet (fundos sólidos)",
+    },
+    "rmbg-1.4": {
+        "zh": "RMBG 1.4（高质量）",
+        "zh-Hant": "RMBG 1.4（高品質）",
+        "en": "RMBG 1.4 (high quality)",
+        "ja": "RMBG 1.4（高品質）",
+        "ko": "RMBG 1.4 (고품질)",
+        "de": "RMBG 1.4 (hohe Qualität)",
+        "fr": "RMBG 1.4 (haute qualité)",
+        "es": "RMBG 1.4 (alta calidad)",
+        "it": "RMBG 1.4 (alta qualità)",
+        "pt": "RMBG 1.4 (alta qualidade)",
+    },
+}
 
 
 def _composite_channels(value: str) -> tuple[int, int, int]:
@@ -104,6 +156,7 @@ class IdPhotoService:
 
     def config(self) -> dict:
         labels = lambda zh, en, ja, ko: {"zh": zh, "en": en, "ja": ja, "ko": ko}
+        installed_matting_models = set(self.registry.available_matting_models())
         return {
             "version": CONFIG_VERSION,
             "sizePresets": [
@@ -139,7 +192,16 @@ class IdPhotoService:
                 {"id": "light-gray", "label": labels("浅灰色", "Light gray", "ライトグレー", "연한 회색"), "type": "solid", "colors": ["#f2f0f0"]},
                 {"id": "transparent", "label": labels("透明", "Transparent", "透明", "투명"), "type": "transparent", "colors": ["#ffffff"]},
             ],
-            "mattingModels": [{"id": model, "label": labels(model, model, model, model), "available": True, "default": model == DEFAULT_OPTIONS.matting_model, "heavy": model in {"rmbg-1.4", "birefnet-v1-lite"}} for model in self.registry.available_matting_models()],
+            "mattingModels": [
+                {
+                    "id": model,
+                    "label": MATTING_MODEL_LABELS[model],
+                    "available": model in installed_matting_models,
+                    "default": model == DEFAULT_OPTIONS.matting_model,
+                    "heavy": model in {"rmbg-1.4", "birefnet-v1-lite"},
+                }
+                for model in HUMAN_MATTING_MODELS
+            ],
             "faceDetectionModels": [{"id": model, "label": labels(model, model, model, model), "available": True, "default": model == "mtcnn", "heavy": False} for model in self.registry.available_face_models()],
             "paperSizes": [{"id": key, "label": labels(key, key, key, key), "widthMm": width / 300 * 25.4, "heightMm": height / 300 * 25.4} for key, (height, width) in PAPER_PIXELS.items()],
             "defaults": DEFAULT_OPTIONS.model_dump(by_alias=True),

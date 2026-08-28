@@ -11,6 +11,33 @@
       "sets": ["preview-default", "production-default"]
     },
     {
+      "id": "hivision_modnet",
+      "url": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/hivision_modnet.onnx",
+      "path": "hivision/creator/weights/hivision_modnet.onnx",
+      "bytes": 25888609,
+      "sha256": "7e0cb9a2a841b426dd0daf1a788ec398dab059bc039041d62b15636c0783bc56",
+      "license": "Apache-2.0 implementation; exact training and exported-weight provenance needs verification before production",
+      "sets": ["preview-default"]
+    },
+    {
+      "id": "rmbg-1.4",
+      "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/onnx/model.onnx",
+      "path": "hivision/creator/weights/rmbg-1.4.onnx",
+      "bytes": 176153355,
+      "sha256": "8cafcf770b06757c4eaced21b1a88e57fd2b66de01b8045f35f01535ba742e0f",
+      "license": "BRIA RMBG 1.4 non-commercial model license; preview evaluation only",
+      "sets": ["preview-default"]
+    },
+    {
+      "id": "birefnet-v1-lite",
+      "url": "https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx",
+      "path": "hivision/creator/weights/birefnet-v1-lite.onnx",
+      "bytes": 224005088,
+      "sha256": "5600024376f572a557870a5eb0afb1e5961636bef4e1e22132025467d0f03333",
+      "license": "Upstream BiRefNet implementation is MIT; selected binary weight and training provenance needs verification before production",
+      "sets": ["preview-default"]
+    },
+    {
       "id": "retinaface-resnet50",
       "url": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/retinaface-resnet50.onnx",
       "path": "hivision/creator/retinaface/weights/retinaface-resnet50.onnx",
