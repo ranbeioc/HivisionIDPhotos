@@ -32,6 +32,12 @@ docker build --platform linux/arm64 \
 Only the immutable Production target may be published by the release workflow.
 The Legacy target remains a loopback-only Preview/regression artifact.
 
+Production runs with `compose.production.yaml`, a unique `.env.production`, a
+dedicated Tunnel token and the loopback-only listener `127.0.0.1:18092`. The
+compose boundary excludes Gradio, drops all capabilities, uses a read-only root
+filesystem and retains the measured four-request admission limit. Never reuse
+the Preview Tunnel token, HMAC secret or model set in Production.
+
 ## Preview startup
 
 1. Copy `.env.preview.example` to `.env.preview`.
