@@ -10,6 +10,8 @@ from PIL import Image
 from scripts.benchmark_models import child_model_value, parse_child_output, percentile
 from scripts.run_golden_matrix import GateFailure, load_manifest, parse_lanes, run_matrix
 from scripts.verify_model_provenance import ProvenanceError, validate_model_set
+from services.id_photo import IdPhotoService
+from services.model_registry import ModelRegistry
 
 
 def _write_png(path: Path, color: tuple[int, int, int, int]) -> str:
@@ -123,3 +125,21 @@ def test_model_provenance_refuses_artifact_metadata_drift():
     tampered["models"][0]["artifact"]["sha256"] = "0" * 64
     with pytest.raises(ProvenanceError, match="artifact mismatch"):
         validate_model_set(manifest, tampered, "production-default")
+
+
+def test_face_model_catalog_keeps_optional_models_visible(tmp_path):
+    registry = ModelRegistry(root=tmp_path)
+    models = IdPhotoService(registry).config()["faceDetectionModels"]
+    assert [model["id"] for model in models] == ["mtcnn", "retinaface-resnet50"]
+    assert {model["id"]: model["available"] for model in models} == {
+        "mtcnn": True,
+        "retinaface-resnet50": False,
+    }
+
+
+def test_face_model_availability_follows_runtime_capabilities(tmp_path):
+    retinaface = tmp_path / "hivision" / "creator" / "retinaface" / "weights" / "retinaface-resnet50.onnx"
+    retinaface.parent.mkdir(parents=True)
+    retinaface.write_bytes(b"fixture")
+    registry = ModelRegistry(root=tmp_path)
+    assert registry.available_face_models() == ["mtcnn", "retinaface-resnet50"]

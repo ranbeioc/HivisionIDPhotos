@@ -16,7 +16,7 @@ from hivision.utils import add_background, add_watermark, resize_image_to_kb
 
 from .asset_broker import AssetBrokerClient
 from .contracts import DEFAULT_OPTIONS, IdPhotoOptions, IdPhotoProcessResult, ProcessingMetadata, ResultAssets
-from .model_registry import ModelRegistry, get_model_registry
+from .model_registry import FACE_DETECTION_MODELS, ModelRegistry, get_model_registry
 
 
 SIZE_PRESETS = {
@@ -40,7 +40,7 @@ SIZE_PRESETS = {
     "korea-visa": (531, 413),
 }
 PAPER_PIXELS = {"6-inch": (1205, 1795), "5-inch": (1051, 1500), "A4": (2479, 3508), "3R": (1051, 1500), "4R": (1205, 1795)}
-CONFIG_VERSION = "hivision-21e59f6-contract-v5-matting-catalog"
+CONFIG_VERSION = "hivision-21e59f6-contract-v6-face-catalog"
 
 MATTING_MODEL_LABELS = {
     "modnet_photographic_portrait_matting": {
@@ -90,6 +90,21 @@ MATTING_MODEL_LABELS = {
         "es": "RMBG 1.4 (alta calidad)",
         "it": "RMBG 1.4 (alta qualità)",
         "pt": "RMBG 1.4 (alta qualidade)",
+    },
+}
+
+FACE_MODEL_LABELS = {
+    "mtcnn": {
+        "zh": "MTCNN（本地快速）", "zh-Hant": "MTCNN（本機快速）", "en": "MTCNN (fast local)",
+        "ja": "MTCNN（ローカル高速）", "ko": "MTCNN (로컬 고속)", "de": "MTCNN (lokal, schnell)",
+        "fr": "MTCNN (local, rapide)", "es": "MTCNN (local, rápido)", "it": "MTCNN (locale, rapido)",
+        "pt": "MTCNN (local, rápido)",
+    },
+    "retinaface-resnet50": {
+        "zh": "RetinaFace ResNet50（高精度）", "zh-Hant": "RetinaFace ResNet50（高精度）", "en": "RetinaFace ResNet50 (high accuracy)",
+        "ja": "RetinaFace ResNet50（高精度）", "ko": "RetinaFace ResNet50 (고정밀)", "de": "RetinaFace ResNet50 (hohe Genauigkeit)",
+        "fr": "RetinaFace ResNet50 (haute précision)", "es": "RetinaFace ResNet50 (alta precisión)", "it": "RetinaFace ResNet50 (alta precisione)",
+        "pt": "RetinaFace ResNet50 (alta precisão)",
     },
 }
 
@@ -157,6 +172,7 @@ class IdPhotoService:
     def config(self) -> dict:
         labels = lambda zh, en, ja, ko: {"zh": zh, "en": en, "ja": ja, "ko": ko}
         installed_matting_models = set(self.registry.available_matting_models())
+        available_face_models = set(self.registry.available_face_models())
         return {
             "version": CONFIG_VERSION,
             "sizePresets": [
@@ -202,7 +218,16 @@ class IdPhotoService:
                 }
                 for model in HUMAN_MATTING_MODELS
             ],
-            "faceDetectionModels": [{"id": model, "label": labels(model, model, model, model), "available": True, "default": model == "mtcnn", "heavy": False} for model in self.registry.available_face_models()],
+            "faceDetectionModels": [
+                {
+                    "id": model,
+                    "label": FACE_MODEL_LABELS[model],
+                    "available": model in available_face_models,
+                    "default": model == "mtcnn",
+                    "heavy": model == "retinaface-resnet50",
+                }
+                for model in FACE_DETECTION_MODELS
+            ],
             "paperSizes": [{"id": key, "label": labels(key, key, key, key), "widthMm": width / 300 * 25.4, "heightMm": height / 300 * 25.4} for key, (height, width) in PAPER_PIXELS.items()],
             "defaults": DEFAULT_OPTIONS.model_dump(by_alias=True),
             "limits": {"maxUploadBytes": 15_728_640, "maxWidth": 8192, "maxHeight": 8192, "maxPixels": 40_000_000, "maxDecodedBytes": 160_000_000, "processingTimeoutMs": 30_000},

@@ -15,6 +15,8 @@ MATTING_MODEL_MIN_AVAILABLE_MIB = {
     "birefnet-v1-lite": 7168,
 }
 
+FACE_DETECTION_MODELS = ["mtcnn", "retinaface-resnet50"]
+
 
 class ModelRegistry:
     """Shares configured creators and serializes request-scoped compute."""
