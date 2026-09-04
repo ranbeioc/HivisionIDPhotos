@@ -51,27 +51,28 @@ class AssetBrokerClient:
         signature = base64.urlsafe_b64encode(hmac.new(self.hmac_secret, canonical, hashlib.sha256).digest()).decode("ascii").rstrip("=")
         return {"content-type": "application/json", "x-request-id": self.request_id, "x-xhalo-timestamp": timestamp, "x-xhalo-signature": signature}
 
-    async def _request_with_retry(self, client: httpx.AsyncClient, method: str, url: str, *, content: bytes, headers: dict[str, str], stage: str) -> httpx.Response:
-        """Retry only callbacks whose server-side operation is idempotent.
+    async def _request_with_retry(self, client: httpx.AsyncClient, method: str, url: str, *, content: bytes, headers: dict[str, str], stage: str, max_attempts: int | None = None) -> httpx.Response:
+        """Retry bounded callback failures without extending the 30s API gate.
 
         Upload PUT reuses the same one-time session, finalize is idempotent on
         uploadSessionId, and derivative/process completion are idempotent on
-        their signed request identifiers. Upload-session creation deliberately
-        remains single-attempt because a lost response could otherwise orphan
-        an extra session.
+        their signed request identifiers. Upload-session creation gets at most
+        one retry; a session whose response was lost remains object-free and is
+        removed by the existing expired-session reconciliation path.
         """
-        for attempt in range(self._max_attempts):
+        attempts = max_attempts or self._max_attempts
+        for attempt in range(attempts):
             response: httpx.Response | None = None
             try:
                 response = await client.request(method, url, content=content, headers=headers)
                 if response.status_code not in _RETRYABLE_STATUS_CODES:
                     response.raise_for_status()
                     return response
-                if attempt + 1 >= self._max_attempts:
+                if attempt + 1 >= attempts:
                     response.raise_for_status()
             except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as error:
                 retryable = not isinstance(error, httpx.HTTPStatusError) or error.response.status_code in _RETRYABLE_STATUS_CODES
-                if not retryable or attempt + 1 >= self._max_attempts:
+                if not retryable or attempt + 1 >= attempts:
                     status_code = error.response.status_code if isinstance(error, httpx.HTTPStatusError) else None
                     raise AssetBrokerError(stage, status_code) from error
 
@@ -90,12 +91,15 @@ class AssetBrokerClient:
         create_path = "/internal/v1/asset-uploads"
         async with self._upload_slots:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
-                try:
-                    created = await client.post(self.base_url, content=body, headers=self._headers("POST", create_path, body))
-                    created.raise_for_status()
-                except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as error:
-                    status_code = error.response.status_code if isinstance(error, httpx.HTTPStatusError) else None
-                    raise AssetBrokerError("create", status_code) from error
+                created = await self._request_with_retry(
+                    client,
+                    "POST",
+                    self.base_url,
+                    content=body,
+                    headers=self._headers("POST", create_path, body),
+                    stage="create",
+                    max_attempts=min(2, self._max_attempts),
+                )
                 session = created.json()
                 await self._request_with_retry(client, "PUT", session["uploadUrl"], content=image_bytes, headers=session["requiredHeaders"], stage="upload")
                 finalize_url = f"{self.base_url}/{session['uploadSessionId']}/finalize"

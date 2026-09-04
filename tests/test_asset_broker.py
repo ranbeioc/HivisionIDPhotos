@@ -1,9 +1,8 @@
 import asyncio
 
 import httpx
-import pytest
 
-from services.asset_broker import AssetBrokerClient, AssetBrokerError
+from services.asset_broker import AssetBrokerClient
 
 
 def _response(status: int, url: str, payload: dict | None = None, headers: dict[str, str] | None = None) -> httpx.Response:
@@ -40,16 +39,14 @@ def test_upload_retries_transient_put_and_finalize_failures(monkeypatch):
         async def __aexit__(self, *_args):
             return None
 
-        async def post(self, url, **_kwargs):
-            calls.append(("POST", url))
-            return _response(201, url, {
-                "uploadSessionId": "session-1",
-                "uploadUrl": "https://assets.test/internal/v1/uploads/token",
-                "requiredHeaders": {"content-type": "image/jpeg"},
-            })
-
         async def request(self, method, url, **_kwargs):
             calls.append((method, url))
+            if method == "POST" and url.endswith("/asset-uploads"):
+                return _response(201, url, {
+                    "uploadSessionId": "session-1",
+                    "uploadUrl": "https://assets.test/internal/v1/uploads/token",
+                    "requiredHeaders": {"content-type": "image/jpeg"},
+                })
             if method == "PUT" and failures["put"]:
                 failures["put"] -= 1
                 return _response(500, url)
@@ -73,7 +70,7 @@ def test_upload_retries_transient_put_and_finalize_failures(monkeypatch):
     assert len([call for call in calls if call[1].endswith("/finalize")]) == 2
 
 
-def test_upload_does_not_retry_session_creation(monkeypatch):
+def test_upload_retries_session_creation_only_once(monkeypatch):
     calls = 0
 
     class FakeClient:
@@ -86,17 +83,25 @@ def test_upload_does_not_retry_session_creation(monkeypatch):
         async def __aexit__(self, *_args):
             return None
 
-        async def post(self, url, **_kwargs):
+        async def request(self, method, url, **_kwargs):
             nonlocal calls
-            calls += 1
-            return _response(503, url)
+            if method == "POST" and url.endswith("/asset-uploads"):
+                calls += 1
+                if calls == 1:
+                    return _response(503, url)
+                return _response(201, url, {
+                    "uploadSessionId": "session-2",
+                    "uploadUrl": "https://assets.test/internal/v1/uploads/token-2",
+                    "requiredHeaders": {"content-type": "image/jpeg"},
+                })
+            if method == "PUT":
+                return _response(204, url)
+            return _response(201, url, {"asset": _descriptor()})
 
     monkeypatch.setattr(httpx, "AsyncClient", FakeClient)
     broker = AssetBrokerClient("https://gateway.test/internal/v1/asset-uploads", "grant", "request-2", "secret")
 
-    with pytest.raises(AssetBrokerError) as raised:
-        asyncio.run(broker.upload("standard", "image/jpeg", b"abc", 295, 413, 300, {}))
+    descriptor = asyncio.run(broker.upload("standard", "image/jpeg", b"abc", 295, 413, 300, {}))
 
-    assert calls == 1
-    assert raised.value.stage == "create"
-    assert raised.value.status_code == 503
+    assert descriptor.asset_id == "asset-standard"
+    assert calls == 2
