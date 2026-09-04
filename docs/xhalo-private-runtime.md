@@ -32,6 +32,12 @@ docker build --platform linux/arm64 \
 Only the immutable Production target may be published by the release workflow.
 The Legacy target remains a loopback-only Preview/regression artifact.
 
+Production runs with `compose.production.yaml`, a unique `.env.production`, a
+dedicated Tunnel token and the loopback-only listener `127.0.0.1:18092`. The
+compose boundary excludes Gradio, drops all capabilities, uses a read-only root
+filesystem and retains the measured four-request admission limit. Never reuse
+the Preview Tunnel token, HMAC secret or model set in Production.
+
 ## Preview startup
 
 1. Copy `.env.preview.example` to `.env.preview`.
@@ -51,6 +57,12 @@ The Legacy target remains a loopback-only Preview/regression artifact.
 The container is read-only, drops all Linux capabilities, enables
 `no-new-privileges`, limits CPU/RAM/PIDs and places Gradio/Hugging Face caches
 under the bounded `/tmp` tmpfs.
+
+Preview reserves an 8 GiB cgroup ceiling for the optional BiRefNet v1 Lite
+model. Its model-specific admission gate requires at least 7168 MiB available
+before inference; lower headroom returns `MODEL_UNAVAILABLE` without loading the
+ONNX graph. This does not change the single-compute semaphore or authorize the
+Preview-only weight for Production.
 
 ## Release checks
 
@@ -93,3 +105,10 @@ The full processing path is additionally bounded by
 test kept four simultaneous default-output requests below the 30-second gate;
 six exceeded it. Requests above the four-slot bound fail fast with the same
 retryable 503 contract instead of increasing latency and retained buffers.
+
+Asset persistence is separately bounded by `HIVISION_ASSET_UPLOAD_CONCURRENCY`
+(default 4). Idempotent upload, finalize, derivative-attachment and
+process-completion callbacks retry transient network/429/5xx failures up to
+`HIVISION_ASSET_CALLBACK_ATTEMPTS` (default 3). Upload-session creation receives
+at most one retry; if the first response was lost, its object-free session is
+removed by the existing expired-session reconciliation path.

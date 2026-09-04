@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-08-25",
+  "reviewedAt": "2026-08-28",
   "models": [
     {
       "id": "modnet_photographic_portrait_matting",
@@ -29,6 +29,90 @@
         "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/tag/pretrained-model"
       ],
       "missingEvidence": []
+    },
+    {
+      "id": "hivision_modnet",
+      "productionAllowed": false,
+      "decision": "needs-verification",
+      "artifact": {
+        "url": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/hivision_modnet.onnx",
+        "bytes": 25888609,
+        "sha256": "7e0cb9a2a841b426dd0daf1a788ec398dab059bc039041d62b15636c0783bc56",
+        "releaseRepository": "Zeyi-Lin/HivisionIDPhotos",
+        "releaseAssetId": 191044681,
+        "uploader": "Zeyi-Lin",
+        "createdAt": "2024-09-07T09:43:28Z"
+      },
+      "implementation": {
+        "repository": "https://github.com/Zeyi-Lin/HivisionIDPhotos",
+        "licenseSpdx": "Apache-2.0",
+        "licenseUrl": "https://github.com/Zeyi-Lin/HivisionIDPhotos/blob/master/LICENSE"
+      },
+      "weightProvenance": {
+        "status": "needs-verification",
+        "reviewedScope": "The Hivision release asset is byte- and checksum-pinned for Preview evaluation."
+      },
+      "evidence": [
+        "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/tag/pretrained-model",
+        "https://github.com/Zeyi-Lin/HivisionIDPhotos/blob/master/LICENSE"
+      ],
+      "missingEvidence": [
+        "Exact training checkpoint, dataset rights and conversion command for the released ONNX weight"
+      ]
+    },
+    {
+      "id": "rmbg-1.4",
+      "productionAllowed": false,
+      "decision": "needs-verification",
+      "artifact": {
+        "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/onnx/model.onnx",
+        "bytes": 176153355,
+        "sha256": "8cafcf770b06757c4eaced21b1a88e57fd2b66de01b8045f35f01535ba742e0f",
+        "repositoryRevision": "2ceba5a5efaec153162aedea169f76caf9b46cf8"
+      },
+      "implementation": {
+        "repository": "https://huggingface.co/briaai/RMBG-1.4",
+        "licenseSpdx": "LicenseRef-BRIA-RMBG-1.4-NC",
+        "licenseUrl": "https://huggingface.co/briaai/RMBG-1.4"
+      },
+      "weightProvenance": {
+        "status": "needs-verification",
+        "reviewedScope": "The immutable Hugging Face revision and ONNX bytes are pinned for Preview evaluation only."
+      },
+      "evidence": ["https://huggingface.co/briaai/RMBG-1.4"],
+      "missingEvidence": [
+        "Commercial deployment authorization under the BRIA RMBG 1.4 non-commercial model license"
+      ]
+    },
+    {
+      "id": "birefnet-v1-lite",
+      "productionAllowed": false,
+      "decision": "needs-verification",
+      "artifact": {
+        "url": "https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx",
+        "bytes": 224005088,
+        "sha256": "5600024376f572a557870a5eb0afb1e5961636bef4e1e22132025467d0f03333",
+        "releaseRepository": "ZhengPeng7/BiRefNet",
+        "releaseAssetId": 186739942,
+        "uploader": "ZhengPeng7",
+        "createdAt": "2024-08-18T18:17:52Z"
+      },
+      "implementation": {
+        "repository": "https://github.com/ZhengPeng7/BiRefNet",
+        "licenseSpdx": "MIT",
+        "licenseUrl": "https://github.com/ZhengPeng7/BiRefNet/blob/main/LICENSE"
+      },
+      "weightProvenance": {
+        "status": "needs-verification",
+        "reviewedScope": "The GitHub release asset is byte- and checksum-pinned for Preview evaluation only."
+      },
+      "evidence": [
+        "https://github.com/ZhengPeng7/BiRefNet/releases/tag/v1",
+        "https://github.com/ZhengPeng7/BiRefNet/blob/main/LICENSE"
+      ],
+      "missingEvidence": [
+        "Training-data and selected binary-weight redistribution review for commercial Production use"
+      ]
     },
     {
       "id": "retinaface-resnet50",

@@ -10,6 +10,8 @@ from PIL import Image
 from scripts.benchmark_models import child_model_value, parse_child_output, percentile
 from scripts.run_golden_matrix import GateFailure, load_manifest, parse_lanes, run_matrix
 from scripts.verify_model_provenance import ProvenanceError, validate_model_set
+from services.id_photo import IdPhotoService
+from services.model_registry import ModelRegistry
 
 
 def _write_png(path: Path, color: tuple[int, int, int, int]) -> str:
@@ -81,7 +83,13 @@ def test_production_model_set_excludes_unreviewed_retinaface():
     production = {model["id"] for model in manifest["models"] if "production-default" in model["sets"]}
     preview = {model["id"] for model in manifest["models"] if "preview-default" in model["sets"]}
     assert production == {"modnet_photographic_portrait_matting"}
-    assert "retinaface-resnet50" in preview
+    assert preview == {
+        "modnet_photographic_portrait_matting",
+        "hivision_modnet",
+        "rmbg-1.4",
+        "birefnet-v1-lite",
+        "retinaface-resnet50",
+    }
     assert "retinaface-resnet50" not in production
 
 
@@ -91,7 +99,13 @@ def test_model_provenance_allows_reviewed_production_and_preview_only_retinaface
     production = validate_model_set(manifest, provenance, "production-default")
     preview = validate_model_set(manifest, provenance, "preview-default")
     assert production == [{"id": "modnet_photographic_portrait_matting", "decision": "approved", "productionAllowed": True}]
-    assert {item["id"] for item in preview} == {"modnet_photographic_portrait_matting", "retinaface-resnet50"}
+    assert {item["id"] for item in preview} == {
+        "modnet_photographic_portrait_matting",
+        "hivision_modnet",
+        "rmbg-1.4",
+        "birefnet-v1-lite",
+        "retinaface-resnet50",
+    }
 
 
 def test_model_provenance_refuses_unreviewed_weight_in_production():
@@ -111,3 +125,21 @@ def test_model_provenance_refuses_artifact_metadata_drift():
     tampered["models"][0]["artifact"]["sha256"] = "0" * 64
     with pytest.raises(ProvenanceError, match="artifact mismatch"):
         validate_model_set(manifest, tampered, "production-default")
+
+
+def test_face_model_catalog_keeps_optional_models_visible(tmp_path):
+    registry = ModelRegistry(root=tmp_path)
+    models = IdPhotoService(registry).config()["faceDetectionModels"]
+    assert [model["id"] for model in models] == ["mtcnn", "retinaface-resnet50"]
+    assert {model["id"]: model["available"] for model in models} == {
+        "mtcnn": True,
+        "retinaface-resnet50": False,
+    }
+
+
+def test_face_model_availability_follows_runtime_capabilities(tmp_path):
+    retinaface = tmp_path / "hivision" / "creator" / "retinaface" / "weights" / "retinaface-resnet50.onnx"
+    retinaface.parent.mkdir(parents=True)
+    retinaface.write_bytes(b"fixture")
+    registry = ModelRegistry(root=tmp_path)
+    assert registry.available_face_models() == ["mtcnn", "retinaface-resnet50"]

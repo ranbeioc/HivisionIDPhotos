@@ -110,7 +110,7 @@ if __name__ == "__main__":
         "modnet_photographic_portrait_matting",
         # "mnn_hivision_modnet",
         "rmbg-1.4",
-        "birefnet-lite",
+        "birefnet-v1-lite",
         "all",
     ]
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         nargs="+",
         required=True,
         choices=MODEL_CHOICES,
-        help='Specify which models to download (options: hivision_modnet, modnet_photographic_portrait_matting, mnn_hivision_modnet, rmbg-1.4, all). Only "all" will download all models.',
+        help='Specify which models to download (options: hivision_modnet, modnet_photographic_portrait_matting, rmbg-1.4, birefnet-v1-lite, all). Only "all" will download all models.',
     )
     args = parser.parse_args()
 

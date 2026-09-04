@@ -13,8 +13,8 @@ from services.request_id import is_valid_request_id
 _seen: OrderedDict[str, float] = OrderedDict()
 
 
-async def verify_gateway_request(request: Request) -> None:
-    secret = os.environ.get("HIVISION_HMAC_SECRET", "")
+async def _verify_gateway_request(request: Request, secret_name: str) -> None:
+    secret = os.environ.get(secret_name, "")
     if not secret:
         raise HTTPException(status_code=503, detail="HMAC secret is not configured")
     request_id = request.headers.get("x-request-id", "")
@@ -42,3 +42,11 @@ async def verify_gateway_request(request: Request) -> None:
     if replay_key in _seen:
         raise HTTPException(status_code=409, detail="Replayed request")
     _seen[replay_key] = current
+
+
+async def verify_gateway_request(request: Request) -> None:
+    await _verify_gateway_request(request, "HIVISION_HMAC_SECRET")
+
+
+async def verify_tools_gateway_request(request: Request) -> None:
+    await _verify_gateway_request(request, "IMAGE_TOOLS_HMAC_SECRET")

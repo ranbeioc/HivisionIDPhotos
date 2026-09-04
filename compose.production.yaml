@@ -1,50 +1,18 @@
 services:
-  image-tools-preview:
-    image: ${IMAGE_TOOLS_IMAGE_REF:?IMAGE_TOOLS_IMAGE_REF is required}
-    platform: linux/arm64
-    restart: unless-stopped
-    env_file:
-      - .env.preview
-    environment:
-      IMAGE_TOOLS_HOST: 0.0.0.0
-      IMAGE_TOOLS_PORT: "8091"
-      IMAGE_TOOLS_MAX_INFLIGHT_REQUESTS: "1"
-    ports:
-      - 127.0.0.1:18091:8091
-    read_only: true
-    tmpfs:
-      - /tmp:size=512m,mode=1777
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    pids_limit: 128
-    mem_limit: 2g
-    cpus: 2.0
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8091),2); s.close()"]
-      interval: 20s
-      timeout: 3s
-      retries: 5
-      start_period: 20s
-
-  hivision-preview:
+  hivision-production:
     image: ${HIVISION_IMAGE_REF:?HIVISION_IMAGE_REF is required}
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - .env.preview
+      - ${HIVISION_ENV_FILE:-.env.production}
     environment:
-      ENABLE_LEGACY_GRADIO: "true"
-      GRADIO_ANALYTICS_ENABLED: "false"
-      GRADIO_TEMP_DIR: /tmp/gradio
+      ENABLE_LEGACY_GRADIO: "false"
       HF_HOME: /tmp/huggingface
       XDG_CACHE_HOME: /tmp/cache
       HIVISION_HOST: 0.0.0.0
       HIVISION_PORT: "8090"
-      HIVISION_MAX_INFLIGHT_REQUESTS: "4"
     ports:
-      - 127.0.0.1:18090:8090
+      - 127.0.0.1:18092:8090
     read_only: true
     tmpfs:
       - /tmp:size=512m,mode=1777
@@ -53,7 +21,7 @@ services:
     cap_drop:
       - ALL
     pids_limit: 256
-    mem_limit: 8g
+    mem_limit: 6g
     cpus: 2.0
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8090),2); s.close()"]
@@ -62,7 +30,7 @@ services:
       retries: 5
       start_period: 90s
 
-  tunnel-preview:
+  tunnel-production:
     image: ${CLOUDFLARED_IMAGE_REF:?CLOUDFLARED_IMAGE_REF is required}
     platform: linux/arm64
     restart: unless-stopped
