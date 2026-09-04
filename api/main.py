@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from starlette.datastructures import UploadFile
@@ -11,11 +12,13 @@ from services.contracts import IdPhotoOptions
 from services.capacity import CapacityUnavailable, RequestAdmission
 from services.id_photo import IdPhotoService, ProcessContext
 from services.background_remove import BackgroundRemoveContext, BackgroundRemoveService
+from services.asset_broker import AssetBrokerError
 from services.image_validator import InvalidImage, validate_and_decode
 from .security import verify_gateway_request
 
 
 app = FastAPI(title="XHalo Hivision Compute", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
+logger = logging.getLogger("xhalo.hivision")
 service = IdPhotoService()
 background_remove_service = BackgroundRemoveService(service.registry)
 request_admission = RequestAdmission()
@@ -65,6 +68,21 @@ async def face_handler(request: Request, error: FaceError):
 @app.exception_handler(APIError)
 async def model_handler(request: Request, error: APIError):
     return JSONResponse(error_body(request, "MODEL_UNAVAILABLE", str(error)), status_code=503)
+
+
+@app.exception_handler(AssetBrokerError)
+async def asset_broker_handler(request: Request, error: AssetBrokerError):
+    logger.error(
+        "asset_broker_failure request_id=%s stage=%s status=%s",
+        request.headers.get("x-request-id", "unknown"),
+        error.stage,
+        error.status_code,
+    )
+    return JSONResponse(
+        error_body(request, "ASSET_UPLOAD_FAILED", "Asset storage is temporarily unavailable. Please retry."),
+        status_code=502,
+        headers={"retry-after": "2"},
+    )
 
 
 @app.get("/v1/health", dependencies=[Depends(verify_gateway_request)])

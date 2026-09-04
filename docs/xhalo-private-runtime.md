@@ -105,3 +105,10 @@ The full processing path is additionally bounded by
 test kept four simultaneous default-output requests below the 30-second gate;
 six exceeded it. Requests above the four-slot bound fail fast with the same
 retryable 503 contract instead of increasing latency and retained buffers.
+
+Asset persistence is separately bounded by `HIVISION_ASSET_UPLOAD_CONCURRENCY`
+(default 4). Idempotent upload, finalize, derivative-attachment and
+process-completion callbacks retry transient network/429/5xx failures up to
+`HIVISION_ASSET_CALLBACK_ATTEMPTS` (default 3). Upload-session creation receives
+at most one retry; if the first response was lost, its object-free session is
+removed by the existing expired-session reconciliation path.
