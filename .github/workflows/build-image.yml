@@ -47,7 +47,7 @@ jobs:
         run: docker compose -f compose.preview.yaml config --quiet
 
       - name: Run contract and fail-closed release-gate tests
-        run: python -m pytest -q -p no:cacheprovider tests/test_contracts.py tests/test_release_gates.py
+        run: python -m pytest -q -p no:cacheprovider tests/test_asset_broker.py tests/test_contracts.py tests/test_release_gates.py
 
       - name: Audit Production Python dependencies
         run: python -m pip_audit --requirement requirements.txt --requirement requirements-app.txt
