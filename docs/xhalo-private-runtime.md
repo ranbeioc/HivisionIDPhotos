@@ -112,3 +112,45 @@ process-completion callbacks retry transient network/429/5xx failures up to
 `HIVISION_ASSET_CALLBACK_ATTEMPTS` (default 3). Upload-session creation receives
 at most one retry; if the first response was lost, its object-free session is
 removed by the existing expired-session reconciliation path.
+
+## Image Tools compute
+
+The OpenCV Image Tools service (`api/tools_main.py`, `services/image_tools.py`;
+`/v1/images/process`, `/v1/images/inpaint`) is built from `Dockerfile.tools` and
+shares the request-ID, contract, validator and asset-broker modules with
+Hivision. It has no models and needs only `IMAGE_TOOLS_HMAC_SECRET`.
+
+```bash
+docker build --platform linux/arm64 -f Dockerfile.tools \
+  -t xhalo-image-tools-production:<immutable-version> .
+```
+
+| Environment | Compose file | Loopback | CPU / RAM |
+| --- | --- | --- | --- |
+| Preview | `compose.tools-preview.yaml` (`.env.preview`) | `127.0.0.1:18091` | 2.0 / 2 GiB |
+| Production | `compose.tools-production.yaml` (`.env.production`) | `127.0.0.1:18093` | 1.0 / 2 GiB |
+
+Production rides the existing Hivision Production Tunnel as a second ingress
+(`image-tools-origin.xhalo.co`) behind its own Access application that admits
+only the Image Gateway Production service token. Its HMAC secret is unique to
+Production and must equal the Gateway's `IMAGE_TOOLS_HMAC_SECRET` in the
+`production` environment; never reuse the Preview value.
+
+## Deployed source provenance
+
+Images on the VPS carry no revision label, so the mapping below is the record.
+It was verified on 2026-11-20 by extracting `/app` from the running containers
+and diffing every Python file against Git (line endings ignored).
+
+| Running image | Source | Evidence |
+| --- | --- | --- |
+| `xhalo-hivision-production:ee6072a` (`:18092`) | tag `xhalo-hivision-production-ee6072a` → `ee6072a` | 14/14 `api/` + `services/` files identical |
+| `xhalo-image-tools-preview:phase2-20260826-contract2` (`:18091`) and its retag `xhalo-image-tools-production:phase2-20260826-contract2` (`:18093`) | tag `xhalo-image-tools-phase2-20260826-contract2` → `21e59f6` | 15/15 files identical |
+
+`/opt/xhalo/image-tools-preview/releases/20260826-phase2/` on the VPS is an
+older contract1 snapshot (its inpaint mask check accepts any bytes) and is
+**not** the running source. Rebuild from the tag, not from that directory.
+
+When building a new image, add
+`--label org.opencontainers.image.revision=$(git rev-parse HEAD)` and record the
+new tag here.
