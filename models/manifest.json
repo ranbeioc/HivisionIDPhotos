@@ -25,8 +25,8 @@
       "path": "hivision/creator/weights/rmbg-1.4.onnx",
       "bytes": 176153355,
       "sha256": "8cafcf770b06757c4eaced21b1a88e57fd2b66de01b8045f35f01535ba742e0f",
-      "license": "BRIA RMBG 1.4 non-commercial model license; preview evaluation only",
-      "sets": ["preview-default"]
+      "license": "BRIA RMBG 1.4 model license; production use under the xHalo commercial agreement with BRIA (owner-attested 2026-11-20)",
+      "sets": ["preview-default", "production-default"]
     },
     {
       "id": "birefnet-v1-lite",
