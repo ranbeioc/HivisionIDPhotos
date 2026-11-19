@@ -144,7 +144,8 @@ and diffing every Python file against Git (line endings ignored).
 
 | Running image | Source | Evidence |
 | --- | --- | --- |
-| `xhalo-hivision-production:ee6072a` (`:18092`) | tag `xhalo-hivision-production-ee6072a` → `ee6072a` | 14/14 `api/` + `services/` files identical |
+| `xhalo-hivision-production:f994a0a` (`:18092`, since 2026-11-20; adds `rmbg-1.4`) | tag `xhalo-hivision-production-f994a0a` → `f994a0a` (tree identical to `xhalo/main` `81e2422`) | built on the VPS with `--target production --build-arg MODEL_SET=production-default` and an `org.opencontainers.image.revision` label; 23 release-gate/contract tests pass inside the image |
+| `xhalo-hivision-production:ee6072a` (rollback) | tag `xhalo-hivision-production-ee6072a` → `ee6072a` | 14/14 `api/` + `services/` files identical; restore `.images.production.env.bak-ee6072a-pre-f994a0a` to roll back |
 | `xhalo-image-tools-preview:phase2-20260826-contract2` (`:18091`) and its retag `xhalo-image-tools-production:phase2-20260826-contract2` (`:18093`) | tag `xhalo-image-tools-phase2-20260826-contract2` → `21e59f6` | 15/15 files identical |
 
 `/opt/xhalo/image-tools-preview/releases/20260826-phase2/` on the VPS is an
