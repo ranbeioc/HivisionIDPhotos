@@ -82,7 +82,7 @@ def test_production_model_set_excludes_unreviewed_retinaface():
     manifest = json.loads(Path("models/manifest.json").read_text(encoding="utf-8"))
     production = {model["id"] for model in manifest["models"] if "production-default" in model["sets"]}
     preview = {model["id"] for model in manifest["models"] if "preview-default" in model["sets"]}
-    assert production == {"modnet_photographic_portrait_matting"}
+    assert production == {"modnet_photographic_portrait_matting", "rmbg-1.4"}
     assert preview == {
         "modnet_photographic_portrait_matting",
         "hivision_modnet",
@@ -98,7 +98,10 @@ def test_model_provenance_allows_reviewed_production_and_preview_only_retinaface
     provenance = json.loads(Path("models/provenance.json").read_text(encoding="utf-8"))
     production = validate_model_set(manifest, provenance, "production-default")
     preview = validate_model_set(manifest, provenance, "preview-default")
-    assert production == [{"id": "modnet_photographic_portrait_matting", "decision": "approved", "productionAllowed": True}]
+    assert production == [
+        {"id": "modnet_photographic_portrait_matting", "decision": "approved", "productionAllowed": True},
+        {"id": "rmbg-1.4", "decision": "approved", "productionAllowed": True},
+    ]
     assert {item["id"] for item in preview} == {
         "modnet_photographic_portrait_matting",
         "hivision_modnet",

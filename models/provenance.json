@@ -62,8 +62,8 @@
     },
     {
       "id": "rmbg-1.4",
-      "productionAllowed": false,
-      "decision": "needs-verification",
+      "productionAllowed": true,
+      "decision": "approved",
       "artifact": {
         "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/onnx/model.onnx",
         "bytes": 176153355,
@@ -72,17 +72,18 @@
       },
       "implementation": {
         "repository": "https://huggingface.co/briaai/RMBG-1.4",
-        "licenseSpdx": "LicenseRef-BRIA-RMBG-1.4-NC",
+        "licenseSpdx": "LicenseRef-BRIA-RMBG-1.4-Commercial",
         "licenseUrl": "https://huggingface.co/briaai/RMBG-1.4"
       },
       "weightProvenance": {
-        "status": "needs-verification",
-        "reviewedScope": "The immutable Hugging Face revision and ONNX bytes are pinned for Preview evaluation only."
+        "status": "approved",
+        "reviewedScope": "Immutable Hugging Face revision 2ceba5a5 and ONNX bytes are checksum-pinned. Commercial production use is covered by the xHalo commercial license agreement with BRIA, attested by the service owner on 2026-11-20; the base model card's non-commercial terms do not apply under that agreement."
       },
-      "evidence": ["https://huggingface.co/briaai/RMBG-1.4"],
-      "missingEvidence": [
-        "Commercial deployment authorization under the BRIA RMBG 1.4 non-commercial model license"
-      ]
+      "evidence": [
+        "https://huggingface.co/briaai/RMBG-1.4",
+        "Owner attestation 2026-11-20: xHalo holds a BRIA commercial license for RMBG (agreement on file with the owner)"
+      ],
+      "missingEvidence": []
     },
     {
       "id": "birefnet-v1-lite",
